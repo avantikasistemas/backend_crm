@@ -148,6 +148,7 @@ class Querys:
             busqueda = filtros.get("busqueda", "").strip()
             zona = filtros.get("zona", "").strip()
             estado = filtros.get("estado", "").strip()
+            owner = filtros.get("owner", "").strip()
             
             # Query base
             query = self.db.query(IntranetCrmOportunidadesModel).filter(
@@ -172,6 +173,11 @@ class Querys:
             if estado:
                 query = query.filter(
                     IntranetCrmOportunidadesModel.estado_nombre == estado
+                )
+            
+            if owner:
+                query = query.filter(
+                    IntranetCrmOportunidadesModel.owner.ilike(f"%{owner}%")
                 )
             
             # Contar total de registros
