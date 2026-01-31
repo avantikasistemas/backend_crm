@@ -122,3 +122,47 @@ class Oportunidades:
         except Exception as e:
             print(f"Error guardando visita: {e}")
             return self.tools.output(500, "Error guardando visita.", {})
+    
+    def listar_visitas_global(self, filtros: dict):
+        """
+        Lista todas las visitas con paginación y filtros (vista global)
+        """
+        try:
+            resultado = self.querys.listar_visitas_global(filtros)
+            return self.tools.output(200, "Visitas listadas exitosamente.", resultado)
+                
+        except CustomException as ce:
+            return self.tools.output(400, str(ce), {})
+        except Exception as e:
+            print(f"Error listando visitas globales: {e}")
+            return self.tools.output(500, "Error listando visitas globales.", {})
+    
+    def listar_visitas_clientes(self, filtros: dict):
+        """
+        Lista visitas de clientes con paginación y filtros
+        """
+        try:
+            resultado = self.querys.listar_visitas_clientes(filtros)
+            return self.tools.output(200, "Visitas de clientes listadas exitosamente.", resultado)
+                
+        except CustomException as ce:
+            return self.tools.output(400, str(ce), {})
+        except Exception as e:
+            print(f"Error listando visitas de clientes: {e}")
+            return self.tools.output(500, "Error listando visitas de clientes.", {})
+    
+    def guardar_visita_cliente(self, data: dict):
+        """
+        Guarda o actualiza una visita de cliente
+        """
+        try:
+            visita = self.querys.guardar_visita_cliente(data)
+            codigo = 201 if not data.get("id") else 200
+            mensaje = "Visita de cliente creada exitosamente." if not data.get("id") else "Visita de cliente actualizada exitosamente."
+            return self.tools.output(codigo, mensaje, visita)
+                
+        except CustomException as ce:
+            return self.tools.output(400, str(ce), {})
+        except Exception as e:
+            print(f"Error guardando visita de cliente: {e}")
+            return self.tools.output(500, "Error guardando visita de cliente.", {})

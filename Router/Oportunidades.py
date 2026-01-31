@@ -65,3 +65,27 @@ def guardar_visita(request: Request, db: Session = Depends(get_db)):
     data = getattr(request.state, "json_data", {})
     response = Oportunidades(db).guardar_visita(data)
     return response
+
+@oportunidades_router.post('/visitas/listar-global', tags=["OPORTUNIDADES"], response_model=dict)
+@http_decorator
+def listar_visitas_global(request: Request, db: Session = Depends(get_db)):
+    """Lista todas las visitas con paginación y filtros (vista global)"""
+    data = getattr(request.state, "json_data", {})
+    response = Oportunidades(db).listar_visitas_global(data)
+    return response
+
+@oportunidades_router.post('/visitas-clientes/listar', tags=["OPORTUNIDADES"], response_model=dict)
+@http_decorator
+def listar_visitas_clientes(request: Request, db: Session = Depends(get_db)):
+    """Lista visitas de clientes con paginación y filtros"""
+    data = getattr(request.state, "json_data", {})
+    response = Oportunidades(db).listar_visitas_clientes(data)
+    return response
+
+@oportunidades_router.post('/visitas-clientes/guardar', tags=["OPORTUNIDADES"], response_model=dict)
+@http_decorator
+def guardar_visita_cliente(request: Request, db: Session = Depends(get_db)):
+    """Guarda o actualiza una visita de cliente"""
+    data = getattr(request.state, "json_data", {})
+    response = Oportunidades(db).guardar_visita_cliente(data)
+    return response

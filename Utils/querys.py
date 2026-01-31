@@ -3,6 +3,7 @@ from sqlalchemy import text, func, case, extract, and_, or_, Date, cast
 from datetime import datetime, date
 from Models.IntranetCrmOportunidadesModel import IntranetCrmOportunidadesModel
 from Models.IntranetOportunidadVisitasModel import IntranetOportunidadVisitasModel
+from Models.IntranetVisitasClientesModel import IntranetVisitasClientesModel
 import json
 import traceback
 
@@ -402,6 +403,238 @@ class Querys:
         except Exception as ex:
             self.db.rollback()
             print(f"Error guardando visita: {str(ex)}")
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+    
+    # Query para listar todas las visitas (vista global) con paginación y filtros
+    def listar_visitas_global(self, filtros: dict):
+        try:
+            # Parámetros de paginación
+            pagina = filtros.get("pagina", 1)
+            limite = filtros.get("limite", 30)
+            busqueda = filtros.get("busqueda", "").strip()
+            estado_id = filtros.get("estado_id")
+            
+            # Query base con JOIN a oportunidades
+            query = self.db.query(
+                IntranetOportunidadVisitasModel,
+                IntranetCrmOportunidadesModel.numero_oportunidad,
+                IntranetCrmOportunidadesModel.nombre_oportunidad
+            ).join(
+                IntranetCrmOportunidadesModel,
+                IntranetOportunidadVisitasModel.oportunidad_id == IntranetCrmOportunidadesModel.id
+            ).filter(
+                IntranetOportunidadVisitasModel.activo == 1
+            )
+            
+            # Aplicar filtro de búsqueda
+            if busqueda:
+                query = query.filter(
+                    or_(
+                        IntranetOportunidadVisitasModel.asunto.contains(busqueda),
+                        IntranetOportunidadVisitasModel.tipo_nombre.contains(busqueda),
+                        IntranetCrmOportunidadesModel.numero_oportunidad.contains(busqueda),
+                        IntranetCrmOportunidadesModel.nombre_oportunidad.contains(busqueda)
+                    )
+                )
+            
+            # Aplicar filtro de estado
+            if estado_id is not None:
+                query = query.filter(IntranetOportunidadVisitasModel.estado_id == estado_id)
+            
+            # Contar total de registros
+            total = query.count()
+            
+            # Aplicar paginación y ordenamiento
+            offset = (pagina - 1) * limite
+            resultados = query.order_by(
+                IntranetOportunidadVisitasModel.fecha_hora.desc()
+            ).limit(limite).offset(offset).all()
+            
+            # Formatear resultados
+            visitas = []
+            for visita, op_numero, op_nombre in resultados:
+                visitas.append({
+                    "id": visita.id,
+                    "oportunidad_id": visita.oportunidad_id,
+                    "op_numero": op_numero,
+                    "op_nombre": op_nombre,
+                    "asunto": visita.asunto,
+                    "tipo_id": visita.tipo_id,
+                    "tipo_nombre": visita.tipo_nombre,
+                    "contacto": visita.contacto,
+                    "objetivo": visita.objetivo,
+                    "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
+                    "estado_id": visita.estado_id,
+                    "estado_nombre": visita.estado_nombre,
+                    "fecha_cierre_real": visita.fecha_cierre_real.isoformat() if visita.fecha_cierre_real else None,
+                    "created_at": visita.created_at.isoformat() if visita.created_at else None
+                })
+            
+            return {
+                "visitas": visitas,
+                "total": total,
+                "pagina": pagina,
+                "limite": limite,
+                "total_paginas": (total + limite - 1) // limite
+            }
+                
+        except Exception as ex:
+            print(f"Error listando visitas globales: {str(ex)}")
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+    
+    # ===================================================
+    # QUERIES PARA VISITAS DE CLIENTES
+    # ===================================================
+    
+    # Query para listar visitas de clientes con paginación y filtros
+    def listar_visitas_clientes(self, filtros: dict):
+        try:
+            # Parámetros de paginación
+            pagina = filtros.get("pagina", 1)
+            limite = filtros.get("limite", 30)
+            busqueda = filtros.get("busqueda", "").strip()
+            estado_id = filtros.get("estado_id")
+            
+            # Query base
+            query = self.db.query(IntranetVisitasClientesModel).filter(
+                IntranetVisitasClientesModel.activo == 1
+            )
+            
+            # Aplicar filtro de búsqueda
+            if busqueda:
+                query = query.filter(
+                    or_(
+                        IntranetVisitasClientesModel.asunto.contains(busqueda),
+                        IntranetVisitasClientesModel.tipo_nombre.contains(busqueda),
+                        IntranetVisitasClientesModel.cliente_nit.contains(busqueda),
+                        IntranetVisitasClientesModel.cliente_nombre.contains(busqueda)
+                    )
+                )
+            
+            # Aplicar filtro de estado
+            if estado_id is not None:
+                query = query.filter(IntranetVisitasClientesModel.estado_id == estado_id)
+            
+            # Contar total de registros
+            total = query.count()
+            
+            # Aplicar paginación y ordenamiento
+            offset = (pagina - 1) * limite
+            resultados = query.order_by(
+                IntranetVisitasClientesModel.fecha_hora.desc()
+            ).limit(limite).offset(offset).all()
+            
+            # Formatear resultados
+            visitas = []
+            for visita in resultados:
+                visitas.append({
+                    "id": visita.id,
+                    "cliente_nit": visita.cliente_nit,
+                    "cliente_nombre": visita.cliente_nombre,
+                    "asunto": visita.asunto,
+                    "tipo_id": visita.tipo_id,
+                    "tipo_nombre": visita.tipo_nombre,
+                    "contacto": visita.contacto,
+                    "objetivo": visita.objetivo,
+                    "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
+                    "estado_id": visita.estado_id,
+                    "estado_nombre": visita.estado_nombre,
+                    "fecha_cierre_real": visita.fecha_cierre_real.isoformat() if visita.fecha_cierre_real else None,
+                    "created_at": visita.created_at.isoformat() if visita.created_at else None
+                })
+            
+            return {
+                "visitas": visitas,
+                "total": total,
+                "pagina": pagina,
+                "limite": limite,
+                "total_paginas": (total + limite - 1) // limite
+            }
+                
+        except Exception as ex:
+            print(f"Error listando visitas de clientes: {str(ex)}")
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+    
+    # Query para guardar o actualizar una visita de cliente
+    def guardar_visita_cliente(self, data: dict):
+        try:
+            visita_id = data.get("id")
+            
+            # Convertir fecha_hora de string a datetime si es necesario
+            if isinstance(data.get("fecha_hora"), str):
+                try:
+                    # Formato: 2026-02-02T16:47
+                    data["fecha_hora"] = datetime.strptime(data["fecha_hora"], "%Y-%m-%dT%H:%M")
+                except ValueError:
+                    try:
+                        # Intentar con formato ISO completo
+                        data["fecha_hora"] = datetime.fromisoformat(data["fecha_hora"])
+                    except:
+                        raise CustomException("Formato de fecha/hora inválido")
+            
+            # Si tiene ID, es una actualización
+            if visita_id:
+                visita = self.db.query(IntranetVisitasClientesModel).filter(
+                    IntranetVisitasClientesModel.id == visita_id
+                ).first()
+                
+                if not visita:
+                    raise CustomException("Visita no encontrada")
+                
+                # Campos que no se deben actualizar
+                campos_excluidos = ['id', 'created_at']
+                
+                # Verificar cambio de estado para setear fecha_cierre_real
+                if data.get("estado_id") != 1 and visita.estado_id == 1:
+                    data["fecha_cierre_real"] = datetime.now()
+                
+                # Actualizar campos
+                for key, value in data.items():
+                    if hasattr(visita, key) and key not in campos_excluidos:
+                        setattr(visita, key, value)
+                
+                visita.updated_at = datetime.now()
+                self.db.commit()
+                self.db.refresh(visita)
+                
+                return {
+                    "id": visita.id,
+                    "cliente_nit": visita.cliente_nit,
+                    "cliente_nombre": visita.cliente_nombre,
+                    "asunto": visita.asunto,
+                    "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
+                    "estado_nombre": visita.estado_nombre,
+                    "estado_id": visita.estado_id
+                }
+            else:
+                # Es una nueva visita
+                # Verificar si el estado es diferente de "Abierto" para setear fecha_cierre_real
+                if data.get("estado_id") != 1:
+                    data["fecha_cierre_real"] = datetime.now()
+                
+                nueva_visita = IntranetVisitasClientesModel(data)
+                self.db.add(nueva_visita)
+                self.db.commit()
+                self.db.refresh(nueva_visita)
+                
+                return {
+                    "id": nueva_visita.id,
+                    "cliente_nit": nueva_visita.cliente_nit,
+                    "cliente_nombre": nueva_visita.cliente_nombre,
+                    "asunto": nueva_visita.asunto,
+                    "fecha_hora": nueva_visita.fecha_hora.isoformat() if nueva_visita.fecha_hora else None,
+                    "estado_nombre": nueva_visita.estado_nombre
+                }
+                
+        except Exception as ex:
+            self.db.rollback()
+            print(f"Error guardando visita de cliente: {str(ex)}")
             raise CustomException(str(ex))
         finally:
             self.db.close()
