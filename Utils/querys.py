@@ -638,3 +638,106 @@ class Querys:
             raise CustomException(str(ex))
         finally:
             self.db.close()
+
+    # ===================================================
+    # QUERIES DE CATÁLOGOS
+    # ===================================================
+
+    def get_catalogo_generico(self, tabla: str, ordenar_por: str = "nombre"):
+        """
+        Query genérico para obtener catálogos
+        """
+        response = list()
+        try:
+            sql = f"""
+                SELECT id, nombre 
+                FROM dbo.{tabla}
+                WHERE activo = 1
+                ORDER BY {ordenar_por}
+            """
+            
+            query = self.db.execute(text(sql)).fetchall()
+            
+            if query:
+                for row in query:
+                    response.append({
+                        "id": row.id,
+                        "nombre": row.nombre
+                    })
+            
+            return response
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
+    def get_todos_catalogos(self):
+        """
+        Obtiene todos los catálogos en una sola consulta
+        """
+        try:
+            catalogos = {
+                "tipoRegistros": [],
+                "origenes": [],
+                "mediosIdentificacion": [],
+                "tiemposEjecucion": [],
+                "tiposProyecto": [],
+                "tiposContratacion": [],
+                "tiposAdjudicacion": [],
+                "motivosNoAdjudicacion": []
+            }
+            
+            # Tipo de registros
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_tipo_registros WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["tipoRegistros"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Orígenes
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_origenes WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["origenes"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Medios de identificación
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_medios_identificacion WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["mediosIdentificacion"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Tiempos de ejecución
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_tiempos_ejecucion WHERE activo = 1 ORDER BY id"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["tiemposEjecucion"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Tipos de proyecto
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_tipos_proyecto WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["tiposProyecto"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Tipos de contratación
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_tipos_contratacion WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["tiposContratacion"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Tipos de adjudicación
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_tipos_adjudicacion WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["tiposAdjudicacion"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Motivos de no adjudicación
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_motivos_no_adjudicacion WHERE activo = 1 ORDER BY nombre"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["motivosNoAdjudicacion"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Estados
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_estados WHERE activo = 1 ORDER BY id"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["estados"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            return catalogos
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()

@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from Config.db import BASE, engine
 from Middleware.get_json import JSONMiddleware
 from Router.Oportunidades import oportunidades_router
+from Router.Catalogos import catalogos_router
 from pathlib import Path
 
 route = Path.cwd()
@@ -18,6 +19,7 @@ app.add_middleware(
     allow_headers=["*"],  # Permitir todos los encabezados; puedes especificar los encabezados permitidos.
 )
 app.include_router(oportunidades_router, prefix="/oportunidades")
+app.include_router(catalogos_router, prefix="/catalogos")
 
 BASE.metadata.create_all(bind=engine)
 
