@@ -303,6 +303,52 @@ class Querys:
             raise CustomException(str(ex))
         finally:
             self.db.close()
+    
+    # Query para guardar un nuevo contacto con consecutivo automático
+    def guardar_contacto(self, data: dict):
+        try:
+            nit = data.get("nit")
+            nombre = data.get("nombre")
+            telefono = data.get("tel_celular", "")
+            
+            if not nit or not nombre:
+                raise CustomException("NIT y nombre son obligatorios para guardar un contacto")
+            
+            # Obtener el último consecutivo para este NIT
+            sql_max = """
+                SELECT MAX(contacto) as max_contacto FROM CRM_contactos WHERE nit = :nit
+            """
+            result = self.db.execute(text(sql_max), {"nit": nit}).fetchone()
+            
+            # Si no hay contactos previos, empezar en 1, de lo contrario sumar 1
+            nuevo_consecutivo = 1 if not result.max_contacto else result.max_contacto + 1
+            
+            # Insertar el nuevo contacto
+            sql_insert = """
+                INSERT INTO CRM_contactos (nit, contacto, nombre, tel_celular)
+                VALUES (:nit, :contacto, :nombre, :tel_celular)
+            """
+            self.db.execute(text(sql_insert), {
+                "nit": nit,
+                "contacto": nuevo_consecutivo,
+                "nombre": nombre,
+                "tel_celular": telefono
+            })
+            self.db.commit()
+            
+            return {
+                "nit": nit,
+                "contacto": nuevo_consecutivo,
+                "nombre": nombre,
+                "tel_celular": telefono
+            }
+            
+        except Exception as ex:
+            self.db.rollback()
+            print(f"Error guardando contacto: {str(ex)}")
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
 
     # Query para listar visitas de una oportunidad
     def listar_visitas_oportunidad(self, oportunidad_id: int):
@@ -326,6 +372,8 @@ class Querys:
                     "estado_id": visita.estado_id,
                     "estado_nombre": visita.estado_nombre,
                     "fecha_cierre_real": visita.fecha_cierre_real.isoformat() if visita.fecha_cierre_real else None,
+                    "comentarios": visita.comentarios,
+                    "resultado_id": visita.resultado_id,
                     "created_at": visita.created_at.isoformat() if visita.created_at else None
                 })
             
@@ -426,7 +474,9 @@ class Querys:
             query = self.db.query(
                 IntranetOportunidadVisitasModel,
                 IntranetCrmOportunidadesModel.numero_oportunidad,
-                IntranetCrmOportunidadesModel.nombre_oportunidad
+                IntranetCrmOportunidadesModel.nombre_oportunidad,
+                IntranetCrmOportunidadesModel.empresa_nit,
+                IntranetCrmOportunidadesModel.empresa_nombre
             ).join(
                 IntranetCrmOportunidadesModel,
                 IntranetOportunidadVisitasModel.oportunidad_id == IntranetCrmOportunidadesModel.id
@@ -460,12 +510,14 @@ class Querys:
             
             # Formatear resultados
             visitas = []
-            for visita, op_numero, op_nombre in resultados:
+            for visita, op_numero, op_nombre, empresa_nit, empresa_nombre in resultados:
                 visitas.append({
                     "id": visita.id,
                     "oportunidad_id": visita.oportunidad_id,
                     "op_numero": op_numero,
                     "op_nombre": op_nombre,
+                    "empresa_nit": empresa_nit,
+                    "empresa_nombre": empresa_nombre,
                     "asunto": visita.asunto,
                     "tipo_id": visita.tipo_id,
                     "tipo_nombre": visita.tipo_nombre,
@@ -475,6 +527,8 @@ class Querys:
                     "estado_id": visita.estado_id,
                     "estado_nombre": visita.estado_nombre,
                     "fecha_cierre_real": visita.fecha_cierre_real.isoformat() if visita.fecha_cierre_real else None,
+                    "comentarios": visita.comentarios,
+                    "resultado_id": visita.resultado_id,
                     "created_at": visita.created_at.isoformat() if visita.created_at else None
                 })
             
@@ -546,6 +600,8 @@ class Querys:
                     "tipo_nombre": visita.tipo_nombre,
                     "contacto": visita.contacto,
                     "objetivo": visita.objetivo,
+                    "comentarios": visita.comentarios,
+                    "resultado_id": visita.resultado_id,
                     "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
                     "estado_id": visita.estado_id,
                     "estado_nombre": visita.estado_nombre,
@@ -692,7 +748,8 @@ class Querys:
                 "tiposProyecto": [],
                 "tiposContratacion": [],
                 "tiposAdjudicacion": [],
-                "motivosNoAdjudicacion": []
+                "motivosNoAdjudicacion": [],
+                "resultadosVisitas": []
             }
             
             # Tipo de registros
@@ -739,6 +796,11 @@ class Querys:
             sql = "SELECT id, nombre FROM dbo.intranet_crm_estados WHERE activo = 1 ORDER BY id"
             query = self.db.execute(text(sql)).fetchall()
             catalogos["estados"] = [{"id": row.id, "nombre": row.nombre} for row in query]
+            
+            # Resultados de visitas
+            sql = "SELECT id, nombre FROM dbo.intranet_crm_resultados_visitas WHERE activo = 1 ORDER BY id"
+            query = self.db.execute(text(sql)).fetchall()
+            catalogos["resultadosVisitas"] = [{"id": row.id, "nombre": row.nombre} for row in query]
             
             return catalogos
                 

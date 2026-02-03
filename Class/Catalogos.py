@@ -143,3 +143,12 @@ class Catalogos:
         except Exception as e:
             print(f"Error obteniendo estados: {e}")
             return self.tools.output(500, "Error obteniendo estados.", [])
+    
+    def get_resultados_visitas(self):
+        """Obtiene el catálogo de resultados de visitas."""
+        try:
+            resultados = self.querys.get_catalogo_generico("intranet_crm_resultados_visitas", "nombre")
+            return self.tools.output(200, "Resultados de visitas obtenidos exitosamente.", resultados)
+        except Exception as e:
+            print(f"Error obteniendo resultados de visitas: {e}")
+            return self.tools.output(500, "Error obteniendo resultados de visitas.", [])

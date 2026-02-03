@@ -79,3 +79,10 @@ def get_estados(request: Request, db: Session = Depends(get_db)):
     """Obtiene el catálogo de estados de oportunidades"""
     response = Catalogos(db).get_estados()
     return response
+
+@catalogos_router.post("/resultados-visitas", tags=["CATALOGOS"], response_model=dict)
+@http_decorator
+def get_resultados_visitas(request: Request, db: Session = Depends(get_db)):
+    """Obtiene el catálogo de resultados de visitas"""
+    response = Catalogos(db).get_resultados_visitas()
+    return response

@@ -50,6 +50,14 @@ def buscar_contactos(request: Request, db: Session = Depends(get_db)):
     response = Oportunidades(db).buscar_contactos(data)
     return response
 
+@oportunidades_router.post('/contactos/guardar', tags=["OPORTUNIDADES"], response_model=dict)
+@http_decorator
+def guardar_contacto(request: Request, db: Session = Depends(get_db)):
+    """Guarda un nuevo contacto con consecutivo automático"""
+    data = getattr(request.state, "json_data", {})
+    response = Oportunidades(db).guardar_contacto(data)
+    return response
+
 @oportunidades_router.post('/visitas/listar', tags=["OPORTUNIDADES"], response_model=dict)
 @http_decorator
 def listar_visitas(request: Request, db: Session = Depends(get_db)):

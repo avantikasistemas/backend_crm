@@ -88,6 +88,20 @@ class Oportunidades:
         except Exception as e:
             print(f"Error buscando contactos: {e}")
             return self.tools.output(500, "Error buscando contactos.", {})
+    
+    def guardar_contacto(self, data: dict):
+        """
+        Guarda un nuevo contacto con consecutivo automático
+        """
+        try:
+            contacto = self.querys.guardar_contacto(data)
+            return self.tools.output(201, "Contacto guardado exitosamente.", contacto)
+                
+        except CustomException as ce:
+            return self.tools.output(400, str(ce), {})
+        except Exception as e:
+            print(f"Error guardando contacto: {e}")
+            return self.tools.output(500, "Error guardando contacto.", {})
 
     def listar_visitas(self, data: dict):
         """
