@@ -57,11 +57,40 @@ class Querys:
         response = list()
         try:
             sql = """
-                SELECT DISTINCT nit_ejecutivo, ejecutivo 
-                FROM terceros_ventas
-                WHERE (nit_ejecutivo LIKE :valor OR ejecutivo LIKE :valor)
-                AND ejecutivo IS NOT NULL AND ejecutivo != ''
-                ORDER BY ejecutivo
+                WITH CombinedRoles AS (
+                    SELECT DISTINCT
+                        nit_ejecutivo AS nit,
+                        ejecutivo     AS nombre,
+                        'EJECUTIVO'   AS rol
+                    FROM terceros_ventas
+                    WHERE nit_ejecutivo IS NOT NULL
+                    AND ejecutivo IS NOT NULL
+                    AND (nit_ejecutivo LIKE :valor OR ejecutivo LIKE :valor)
+
+                    UNION ALL
+
+                    SELECT DISTINCT
+                        nit_coord     AS nit,
+                        coordinador   AS nombre,
+                        'COORDINADOR' AS rol
+                    FROM terceros_ventas
+                    WHERE nit_coord IS NOT NULL
+                    AND coordinador IS NOT NULL
+                    AND (nit_coord LIKE :valor OR coordinador LIKE :valor)
+                )
+                SELECT 
+                    c1.nit,
+                    c1.nombre,
+                    STUFF((
+                        SELECT ' / ' + c2.rol
+                        FROM CombinedRoles c2
+                        WHERE c2.nit = c1.nit AND c2.nombre = c1.nombre
+                        ORDER BY c2.rol
+                        FOR XML PATH(''), TYPE
+                    ).value('.', 'NVARCHAR(MAX)'), 1, 3, '') AS rol
+                FROM CombinedRoles c1
+                GROUP BY c1.nit, c1.nombre
+                ORDER BY c1.nombre
             """
 
             query = self.db.execute(text(sql), {"valor": f"%{valor}%"}).fetchall()
@@ -69,8 +98,9 @@ class Querys:
             if query:
                 for key in query:   
                     response.append({
-                        "nit_ejecutivo": key.nit_ejecutivo,
-                        "ejecutivo": key.ejecutivo
+                        "nit_ejecutivo": key.nit,
+                        "ejecutivo": key.nombre,
+                        "rol": key.rol
                     })
 
             return response
@@ -397,6 +427,8 @@ class Querys:
                     "tipo_nombre": visita.tipo_nombre,
                     "contacto": visita.contacto,
                     "objetivo": visita.objetivo,
+                    "nit_ejecutivo": visita.nit_ejecutivo,
+                    "ejecutivo_nombre": visita.ejecutivo_nombre,
                     "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
                     "estado_id": visita.estado_id,
                     "estado_nombre": visita.estado_nombre,
@@ -460,6 +492,8 @@ class Querys:
                     "id": visita.id,
                     "oportunidad_id": visita.oportunidad_id,
                     "asunto": visita.asunto,
+                    "nit_ejecutivo": visita.nit_ejecutivo,
+                    "ejecutivo_nombre": visita.ejecutivo_nombre,
                     "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
                     "estado_nombre": visita.estado_nombre,
                     "estado_id": visita.estado_id
@@ -479,6 +513,8 @@ class Querys:
                     "id": nueva_visita.id,
                     "oportunidad_id": nueva_visita.oportunidad_id,
                     "asunto": nueva_visita.asunto,
+                    "nit_ejecutivo": nueva_visita.nit_ejecutivo,
+                    "ejecutivo_nombre": nueva_visita.ejecutivo_nombre,
                     "fecha_hora": nueva_visita.fecha_hora.isoformat() if nueva_visita.fecha_hora else None,
                     "estado_nombre": nueva_visita.estado_nombre
                 }
@@ -558,6 +594,8 @@ class Querys:
                     "fecha_cierre_real": visita.fecha_cierre_real.isoformat() if visita.fecha_cierre_real else None,
                     "comentarios": visita.comentarios,
                     "resultado_id": visita.resultado_id,
+                    "nit_ejecutivo": visita.nit_ejecutivo,
+                    "ejecutivo_nombre": visita.ejecutivo_nombre,
                     "created_at": visita.created_at.isoformat() if visita.created_at else None
                 })
             
