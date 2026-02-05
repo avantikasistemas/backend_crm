@@ -97,3 +97,11 @@ def guardar_visita_cliente(request: Request, db: Session = Depends(get_db)):
     data = getattr(request.state, "json_data", {})
     response = Oportunidades(db).guardar_visita_cliente(data)
     return response
+
+@oportunidades_router.post('/ejecutivos', tags=["OPORTUNIDADES"], response_model=dict)
+@http_decorator
+def buscar_ejecutivos(request: Request, db: Session = Depends(get_db)):
+    """Busca ejecutivos para el campo de visitas"""
+    data = getattr(request.state, "json_data", {})
+    response = Oportunidades(db).buscar_ejecutivos(data)
+    return response

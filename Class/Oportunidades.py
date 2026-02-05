@@ -180,3 +180,18 @@ class Oportunidades:
         except Exception as e:
             print(f"Error guardando visita de cliente: {e}")
             return self.tools.output(500, "Error guardando visita de cliente.", {})
+
+    def buscar_ejecutivos(self, data: dict):
+        """
+        Busca ejecutivos por NIT o nombre
+        """
+        try:
+            valor = data.get("valor", "")
+            ejecutivos = self.querys.get_ejecutivos(valor)
+            return self.tools.output(200, "Ejecutivos encontrados exitosamente.", ejecutivos)
+                
+        except CustomException as ce:
+            return self.tools.output(400, str(ce), {})
+        except Exception as e:
+            print(f"Error buscando ejecutivos: {e}")
+            return self.tools.output(500, "Error buscando ejecutivos.", {})

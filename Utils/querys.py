@@ -52,6 +52,35 @@ class Querys:
         finally:
             self.db.close()
 
+    # Query para obtener ejecutivos de terceros_ventas
+    def get_ejecutivos(self, valor: str):
+        response = list()
+        try:
+            sql = """
+                SELECT DISTINCT nit_ejecutivo, ejecutivo 
+                FROM terceros_ventas
+                WHERE (nit_ejecutivo LIKE :valor OR ejecutivo LIKE :valor)
+                AND ejecutivo IS NOT NULL AND ejecutivo != ''
+                ORDER BY ejecutivo
+            """
+
+            query = self.db.execute(text(sql), {"valor": f"%{valor}%"}).fetchall()
+
+            if query:
+                for key in query:   
+                    response.append({
+                        "nit_ejecutivo": key.nit_ejecutivo,
+                        "ejecutivo": key.ejecutivo
+                    })
+
+            return response
+                
+        except Exception as ex:
+            print(str(ex))
+            raise CustomException(str(ex))
+        finally:
+            self.db.close()
+
     # Query para obtener una oportunidad por ID
     def obtener_oportunidad_por_id(self, oportunidad_id: int):
         try:
@@ -571,7 +600,8 @@ class Querys:
                         IntranetVisitasClientesModel.asunto.contains(busqueda),
                         IntranetVisitasClientesModel.tipo_nombre.contains(busqueda),
                         IntranetVisitasClientesModel.cliente_nit.contains(busqueda),
-                        IntranetVisitasClientesModel.cliente_nombre.contains(busqueda)
+                        IntranetVisitasClientesModel.cliente_nombre.contains(busqueda),
+                        IntranetVisitasClientesModel.ejecutivo_nombre.contains(busqueda)
                     )
                 )
             
@@ -602,6 +632,8 @@ class Querys:
                     "objetivo": visita.objetivo,
                     "comentarios": visita.comentarios,
                     "resultado_id": visita.resultado_id,
+                    "nit_ejecutivo": visita.nit_ejecutivo,
+                    "ejecutivo_nombre": visita.ejecutivo_nombre,
                     "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
                     "estado_id": visita.estado_id,
                     "estado_nombre": visita.estado_nombre,
@@ -670,6 +702,8 @@ class Querys:
                     "cliente_nit": visita.cliente_nit,
                     "cliente_nombre": visita.cliente_nombre,
                     "asunto": visita.asunto,
+                    "nit_ejecutivo": visita.nit_ejecutivo,
+                    "ejecutivo_nombre": visita.ejecutivo_nombre,
                     "fecha_hora": visita.fecha_hora.isoformat() if visita.fecha_hora else None,
                     "estado_nombre": visita.estado_nombre,
                     "estado_id": visita.estado_id
@@ -690,6 +724,8 @@ class Querys:
                     "cliente_nit": nueva_visita.cliente_nit,
                     "cliente_nombre": nueva_visita.cliente_nombre,
                     "asunto": nueva_visita.asunto,
+                    "nit_ejecutivo": nueva_visita.nit_ejecutivo,
+                    "ejecutivo_nombre": nueva_visita.ejecutivo_nombre,
                     "fecha_hora": nueva_visita.fecha_hora.isoformat() if nueva_visita.fecha_hora else None,
                     "estado_nombre": nueva_visita.estado_nombre
                 }
