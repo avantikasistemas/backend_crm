@@ -451,6 +451,29 @@ class Querys:
         try:
             visita_id = data.get("id")
             
+            # Validar campos obligatorios
+            campos_obligatorios = ["asunto", "tipo_id", "contacto", "objetivo", "resultado_id", "fecha_hora", "nit_ejecutivo"]
+            campos_faltantes = []
+            
+            for campo in campos_obligatorios:
+                valor = data.get(campo)
+                # Verificar que el campo exista y no esté vacío (None, "", o espacios en blanco)
+                if valor is None or (isinstance(valor, str) and not valor.strip()):
+                    campos_faltantes.append(campo)
+            
+            if campos_faltantes:
+                campos_legibles = {
+                    "asunto": "Asunto",
+                    "tipo_id": "Tipo",
+                    "contacto": "Contacto",
+                    "objetivo": "Objetivo",
+                    "resultado_id": "Resultado",
+                    "fecha_hora": "Fecha y Hora de Visita",
+                    "nit_ejecutivo": "Coordinador / Ejecutivo"
+                }
+                nombres_faltantes = [campos_legibles.get(c, c) for c in campos_faltantes]
+                raise CustomException(f"Los siguientes campos son obligatorios: {', '.join(nombres_faltantes)}")
+            
             # Convertir fecha_hora de string a datetime si es necesario
             if isinstance(data.get("fecha_hora"), str):
                 try:
@@ -697,6 +720,29 @@ class Querys:
     def guardar_visita_cliente(self, data: dict):
         try:
             visita_id = data.get("id")
+            
+            # Validar campos obligatorios
+            campos_obligatorios = ["cliente_nit", "asunto", "tipo_id", "contacto", "fecha_hora", "nit_ejecutivo", "resultado_id"]
+            campos_faltantes = []
+            
+            for campo in campos_obligatorios:
+                valor = data.get(campo)
+                # Verificar que el campo exista y no esté vacío (None, "", o espacios en blanco)
+                if valor is None or (isinstance(valor, str) and not valor.strip()):
+                    campos_faltantes.append(campo)
+            
+            if campos_faltantes:
+                campos_legibles = {
+                    "cliente_nit": "Cliente",
+                    "asunto": "Asunto",
+                    "tipo_id": "Tipo",
+                    "contacto": "Contacto",
+                    "fecha_hora": "Fecha y Hora de Visita",
+                    "nit_ejecutivo": "Coordinador / Ejecutivo",
+                    "resultado_id": "Resultado"
+                }
+                nombres_faltantes = [campos_legibles.get(c, c) for c in campos_faltantes]
+                raise CustomException(f"Los siguientes campos son obligatorios: {', '.join(nombres_faltantes)}")
             
             # Convertir fecha_hora de string a datetime si es necesario
             if isinstance(data.get("fecha_hora"), str):
